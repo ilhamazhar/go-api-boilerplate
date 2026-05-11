@@ -10,6 +10,7 @@ import (
 	"github.com/ilhamazhar/golang-gpt/internal/repository"
 	"github.com/ilhamazhar/golang-gpt/internal/service"
 	"github.com/ilhamazhar/golang-gpt/pkg/jwt"
+	xenclient "github.com/ilhamazhar/golang-gpt/pkg/xendit"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -25,18 +26,28 @@ func New(cfg config.Config) (*App, error) {
 		return nil, fmt.Errorf("database: %w", err)
 	}
 
-	db.AutoMigrate(&domain.User{})
+	db.AutoMigrate(&domain.User{}, &domain.Payment{})
 
+	 // --- External clients ---
 	jwtManager := jwt.NewManager(cfg.JWTSecret, cfg.JWTExpiry)
 	refreshManager := jwt.NewManager(cfg.JWTSecret, cfg.JWTRefreshExpiry)
+	xenditClient := xenclient.NewClient(cfg.XenditAPIKey, cfg.XenditCallbackToken)
 
+	// --- Repositories ---
 	userRepo := repository.NewUserRepository(db)
+	paymentRepo := repository.NewPaymentRepository(db)
+
+	// --- Services ---
 	authService := service.NewAuthService(userRepo, jwtManager, refreshManager)
+	paymentService := service.NewPaymentService(paymentRepo, xenditClient)
+
+	// --- Handlers ---
 	authHandler := handler.NewAuthHandler(authService)
+	paymentHandler := handler.NewPaymentHandler(paymentService)
 
 	r := gin.Default()
 	r.Use(corsMiddleware())
-	registerRoutes(r, authHandler, jwtManager)
+	registerRoutes(r, Handlers{Auth: authHandler, Payment: paymentHandler}, jwtManager)
 
 	return &App{cfg: cfg, router: r}, nil
 }

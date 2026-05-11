@@ -19,16 +19,14 @@ func Validate(s any) []FieldError {
 		return nil
 	}
 
-	var fieldErrors []FieldError
-	if err != nil {
-		for _, e := range err.(validator.ValidationErrors) {
-			fieldErrors = append(fieldErrors, FieldError{
-				Field:   e.Field(),
-				Message: message(e),
-			})
-		}
+	var errs []FieldError
+	for _, e := range err.(validator.ValidationErrors) {
+		errs = append(errs, FieldError{
+			Field:   e.Field(),
+			Message: message(e),
+		})
 	}
-	return fieldErrors
+	return errs
 }
 
 func message(e validator.FieldError) string {
@@ -41,6 +39,10 @@ func message(e validator.FieldError) string {
 		return fmt.Sprintf("%s must be at least %s characters", e.Field(), e.Param())
 	case "max":
 		return fmt.Sprintf("%s must be at most %s characters", e.Field(), e.Param())
+	case "eqfield":
+		return fmt.Sprintf("%s must be equal to %s", e.Field(), e.Param())
+	case "gt":
+		return fmt.Sprintf("%s must be greater than %s", e.Field(), e.Param())
 	default:
 		return fmt.Sprintf("%s is not valid", e.Field())
 	}

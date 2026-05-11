@@ -18,12 +18,13 @@ type User struct {
 	UpdatedAt    time.Time `json:"updated_at"`
 }
 
-// --- Request DTOs (validated by go-playground/validator) ---
+// --- Request DTOs ---
 
 type RegisterRequest struct {
-	Name     string `json:"name" validate:"required"`
-	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required,min=6"`
+	Name            string `json:"name" validate:"required"`
+	Email           string `json:"email" validate:"required,email"`
+	Password        string `json:"password" validate:"required,min=6"`
+	PasswordConfirm string `json:"password_confirm" validate:"required,eqfield=Password"`
 }
 
 type LoginRequest struct {
@@ -49,11 +50,9 @@ type TokenResponse struct {
 
 func ToUserResponse(u *User) UserResponse {
 	return UserResponse{
-		ID:        u.ID,
-		Name:      u.Name,
-		Email:     u.Email,
-		CreatedAt: u.CreatedAt,
-		UpdatedAt: u.UpdatedAt,
+		ID:    u.ID,
+		Name:  u.Name,
+		Email: u.Email,
 	}
 }
 

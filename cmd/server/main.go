@@ -22,6 +22,5 @@ func main() {
 		log.Fatalf("failed to initialize app: %v", err)
 	}
 
-	log.Printf("Server running on port %s", cfg.ServerPort)
 	log.Fatal(a.Run())
 }

@@ -10,18 +10,27 @@ import (
 	"github.com/ilhamazhar/golang-gpt/pkg/jwt"
 )
 
-func registerRoutes(r *gin.Engine, authHandler *handler.AuthHandler, jwtManager *jwt.Manager) {
+type Handlers struct {
+	Auth    *handler.AuthHandler
+	Payment *handler.PaymentHandler
+}
+
+func registerRoutes(r *gin.Engine, h Handlers, jwtManager *jwt.Manager) {
 	auth := r.Group("/auth")
 	{
-		auth.POST("/register", authHandler.Register)
-		auth.POST("/login", authHandler.Login)
+		auth.POST("/register", h.Auth.Register)
+		auth.POST("/login", h.Auth.Login)
 	}
 
 	api := r.Group("/api")
 	api.Use(middleware.Auth(jwtManager))
 	{
-		api.GET("/me", authHandler.Me)
+		api.GET("/me", h.Auth.Me)
+		api.POST("/payments/qris", h.Payment.CreateQRIS)
+		api.GET("/payments/:order_ref", h.Payment.GetStatus)
 	}
+
+	r.POST("/webhooks/xendit", h.Payment.Webhook)
 }
 
 func corsMiddleware() gin.HandlerFunc {
