@@ -25,7 +25,7 @@ type CreateRateRequest struct {
 type UpdateRateRequest struct {
 	Name     string `json:"name" validate:"omitempty,max=255"`
 	Amount   int64  `json:"amount" validate:"omitempty,gt=0"`
-	Discount *int64 `json:"discount"`
+	Discount *int64 `json:"discount" validate:"omitempty,gte=0"`
 	Notes    string `json:"notes" validate:"omitempty,max=1000"`
 }
 

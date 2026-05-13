@@ -58,3 +58,19 @@ func (h *AuthHandler) Me(c *gin.Context) {
 
 	response.OK(c, http.StatusOK, "User info retrieved", user)
 }
+
+func (h *AuthHandler) ChangePassword(c *gin.Context) {
+	claims := middleware.ClaimsFromContext(c)
+
+	var req domain.ChangePasswordRequest
+	if !bindJSON(c, &req) {
+		return
+	}
+
+	if err := h.auth.ChangePassword(c.Request.Context(), claims.UserID, req); err != nil {
+		response.Fail(c, http.StatusUnprocessableEntity, err.Error(), nil)
+		return
+	}
+
+	response.OK(c, http.StatusOK, "Password changed successfully", nil)
+}

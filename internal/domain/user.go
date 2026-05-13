@@ -32,6 +32,17 @@ type LoginRequest struct {
 	Password string `json:"password" validate:"required"`
 }
 
+type UpdateUserRequest struct {
+	Name  string `json:"name" validate:"omitempty,max=255"`
+	Email string `json:"email" validate:"omitempty,email"`
+}
+
+type ChangePasswordRequest struct {
+	CurrentPassword string `json:"current_password" validate:"required"`
+	NewPassword     string `json:"new_password" validate:"required,min=6"`
+	ConfirmPassword string `json:"confirm_password" validate:"required,eqfield=NewPassword"`
+}
+
 // --- Response DTOs (never expose PasswordHash) ---
 
 type UserResponse struct {
@@ -64,10 +75,21 @@ type UserRepository interface {
 	Create(ctx context.Context, user *User) error
 	FindByEmail(ctx context.Context, email string) (*User, error)
 	FindByID(ctx context.Context, id uuid.UUID) (*User, error)
+	FindAll(ctx context.Context, page, limit int) ([]User, int64, error)
+	Update(ctx context.Context, user *User) error
+	Delete(ctx context.Context, id uuid.UUID) error
+}
+
+type UserService interface {
+	FindAll(ctx context.Context, page, limit int) ([]UserResponse, int64, error)
+	FindByID(ctx context.Context, id uuid.UUID) (UserResponse, error)
+	Update(ctx context.Context, id uuid.UUID, req UpdateUserRequest) (UserResponse, error)
+	Delete(ctx context.Context, id uuid.UUID) error
 }
 
 type AuthService interface {
 	Register(ctx context.Context, req RegisterRequest) (UserResponse, error)
 	Login(ctx context.Context, req LoginRequest) (*TokenResponse, error)
 	GetProfile(ctx context.Context, id uuid.UUID) (UserResponse, error)
+	ChangePassword(ctx context.Context, id uuid.UUID, req ChangePasswordRequest) error
 }

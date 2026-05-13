@@ -2,6 +2,7 @@ package handler
 
 import (
 	"io"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -9,6 +10,8 @@ import (
 	"github.com/ilhamazhar/golang-gpt/internal/middleware"
 	"github.com/ilhamazhar/golang-gpt/pkg/response"
 )
+
+const maxWebhookBodyBytes = 1 << 20 // 1 MB
 
 type PaymentHandler struct {
 	svc domain.PaymentService
@@ -20,6 +23,10 @@ func NewPaymentHandler(svc domain.PaymentService) *PaymentHandler {
 
 func (h *PaymentHandler) CreateQRIS(c *gin.Context) {
 	claims := middleware.ClaimsFromContext(c)
+	if claims == nil {
+		response.Fail(c, http.StatusUnauthorized, "unauthorized", nil)
+		return
+	}
 
 	var req domain.CreateQRISRequest
 	if !bindJSON(c, &req) {
@@ -48,16 +55,15 @@ func (h *PaymentHandler) GetStatus(c *gin.Context) {
 func (h *PaymentHandler) Webhook(c *gin.Context) {
 	callbackToken := c.GetHeader("x-callback-token")
 
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxWebhookBodyBytes)
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		c.Status(http.StatusBadRequest)
+		c.Status(http.StatusRequestEntityTooLarge)
 		return
 	}
 
 	if err := h.svc.HandleWebhook(c.Request.Context(), callbackToken, body); err != nil {
-		// Log internally but always return 200 so Xendit doesn't retry forever
-		c.Status(http.StatusOK)
-		return
+		log.Printf("webhook error: %v", err)
 	}
 	c.Status(http.StatusOK)
 }

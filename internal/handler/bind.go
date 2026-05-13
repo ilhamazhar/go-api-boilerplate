@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/ilhamazhar/golang-gpt/pkg/response"
 	"github.com/ilhamazhar/golang-gpt/pkg/validator"
 )
@@ -26,4 +27,8 @@ func bindJSON[T any](c *gin.Context, req *T) bool {
 func parseID(c *gin.Context) (uint, error) {
 	n, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	return uint(n), err
+}
+
+func parseUUID(c *gin.Context) (uuid.UUID, error) {
+	return uuid.Parse(c.Param("id"))
 }

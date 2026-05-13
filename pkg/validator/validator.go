@@ -1,6 +1,7 @@
 package validator
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
@@ -19,8 +20,13 @@ func Validate(s any) []FieldError {
 		return nil
 	}
 
+	var ve validator.ValidationErrors
+	if !errors.As(err, &ve) {
+		return nil
+	}
+
 	var errs []FieldError
-	for _, e := range err.(validator.ValidationErrors) {
+	for _, e := range ve {
 		errs = append(errs, FieldError{
 			Field:   e.Field(),
 			Message: message(e),

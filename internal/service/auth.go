@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/ilhamazhar/golang-gpt/internal/domain"
@@ -77,4 +78,24 @@ func (s *authService) GetProfile(ctx context.Context, id uuid.UUID) (domain.User
 		return domain.UserResponse{}, errors.New("user not found")
 	}
 	return domain.ToUserResponse(user), nil
+}
+
+func (s *authService) ChangePassword(ctx context.Context, id uuid.UUID, req domain.ChangePasswordRequest) error {
+	user, err := s.users.FindByID(ctx, id)
+	if err != nil {
+		return errors.New("user not found")
+	}
+
+	match, err := password.Verify(req.CurrentPassword, user.PasswordHash)
+	if err != nil || !match {
+		return errors.New("current password is incorrect")
+	}
+
+	hash, err := password.Hash(req.NewPassword, password.DefaultParams)
+	if err != nil {
+		return fmt.Errorf("failed to hash password: %w", err)
+	}
+
+	user.PasswordHash = hash
+	return s.users.Update(ctx, user)
 }

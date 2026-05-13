@@ -14,6 +14,7 @@ type Handlers struct {
 	Auth    *handler.AuthHandler
 	Payment *handler.PaymentHandler
 	Rate    *handler.RateHandler
+	User    *handler.UserHandler
 }
 
 func registerRoutes(r *gin.Engine, h Handlers, jwtManager *jwt.Manager) {
@@ -28,7 +29,11 @@ func registerRoutes(r *gin.Engine, h Handlers, jwtManager *jwt.Manager) {
 	api := r.Group("/api")
 	api.Use(middleware.Auth(jwtManager))
 	{
-		api.GET("/me", h.Auth.Me)
+		me := api.Group("/me")
+		{
+			me.GET("/", h.Auth.Me)
+			me.PUT("/password", h.Auth.ChangePassword)
+		}
 
 		payments := api.Group("/payments")
 		{
@@ -44,16 +49,23 @@ func registerRoutes(r *gin.Engine, h Handlers, jwtManager *jwt.Manager) {
 			rates.PUT("/:id", h.Rate.Update)
 			rates.DELETE("/:id", h.Rate.Delete)
 		}
+
+		users := api.Group("/users")
+		{
+			users.GET("", h.User.GetAll)
+			users.GET("/:id", h.User.GetByID)
+			users.PUT("/:id", h.User.Update)
+			users.DELETE("/:id", h.User.Delete)
+		}
 	}
 }
 
 func corsMiddleware() gin.HandlerFunc {
 	return cors.New(cors.Config{
-		AllowOrigins:     []string{"*"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
+		AllowOrigins:  []string{"*"},
+		AllowMethods:  []string{"GET", "POST", "PUT", "PATCH", "DELETE"},
+		AllowHeaders:  []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders: []string{"Content-Length"},
+		MaxAge:        12 * time.Hour,
 	})
 }
