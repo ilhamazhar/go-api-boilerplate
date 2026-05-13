@@ -47,7 +47,7 @@ func (h *PaymentHandler) GetStatus(c *gin.Context) {
 		response.Fail(c, http.StatusNotFound, err.Error(), nil)
 		return
 	}
-	response.OK(c, http.StatusOK, "ok", result)
+	response.OK(c, http.StatusOK, "Order status retrieved", result)
 }
 
 // Webhook receives Xendit's callback. Public endpoint, authed via X-Callback-Token header.

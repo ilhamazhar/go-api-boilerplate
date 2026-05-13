@@ -28,11 +28,12 @@ func (s *PaymentService) CreateQRIS(ctx context.Context, userID uuid.UUID, req d
 	orderRef := fmt.Sprintf("ORDER-%s-%d", userID, time.Now().UnixMilli())
 
 	payment := &domain.Payment{
-		UserID:   userID,
-		OrderRef: orderRef,
-		Amount:   req.Amount,
-		Currency: "IDR",
-		Status:   domain.PaymentStatusPending,
+		UserID:      userID,
+		OrderRef:    orderRef,
+		Amount:      req.Amount,
+		Currency:    "IDR",
+		Status:      domain.PaymentStatusPending,
+		Description: req.Description,
 	}
 	if err := s.repo.Create(ctx, payment); err != nil {
 		return nil, fmt.Errorf("failed to create payment record: %w", err)
@@ -49,26 +50,29 @@ func (s *PaymentService) CreateQRIS(ctx context.Context, userID uuid.UUID, req d
 	}
 
 	return &domain.QRISResponse{
-		OrderRef:  orderRef,
-		QRString:  qr.QRString,
-		Amount:    req.Amount,
-		Currency:  "IDR",
-		Status:    domain.PaymentStatusPending,
-		ExpiresAt: &qr.ExpiresAt,
+		OrderRef:    orderRef,
+		QRString:    qr.QRString,
+		Amount:      req.Amount,
+		Currency:    "IDR",
+		Status:      domain.PaymentStatusPending,
+		ExpiresAt:   &qr.ExpiresAt,
+		Description: req.Description,
 	}, nil
 }
 
 func (s *PaymentService) GetStatus(ctx context.Context, orderRef string) (*domain.PaymentStatusResponse, error) {
 	payment, err := s.repo.FindByOrderRef(ctx, orderRef)
 	if err != nil {
-		return nil, errors.New("failed to find payment")
+		return nil, errors.New("Failed to find payment")
 	}
 
 	return &domain.PaymentStatusResponse{
-		OrderRef: payment.OrderRef,
-		Status:   payment.Status,
-		Amount:   payment.Amount,
-		PaidAt:   payment.PaidAt,
+		OrderRef:    payment.OrderRef,
+		Status:      payment.Status,
+		Amount:      payment.Amount,
+		PaidAt:      payment.PaidAt,
+		ExpiresAt:   payment.ExpiresAt,
+		Description: payment.Description,
 	}, nil
 }
 
