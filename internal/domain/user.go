@@ -50,9 +50,11 @@ type TokenResponse struct {
 
 func ToUserResponse(u *User) UserResponse {
 	return UserResponse{
-		ID:    u.ID,
-		Name:  u.Name,
-		Email: u.Email,
+		ID:        u.ID,
+		Name:      u.Name,
+		Email:     u.Email,
+		CreatedAt: u.CreatedAt,
+		UpdatedAt: u.UpdatedAt,
 	}
 }
 
@@ -65,6 +67,7 @@ type UserRepository interface {
 }
 
 type AuthService interface {
-	Register(ctx context.Context, req RegisterRequest) (*User, error)
+	Register(ctx context.Context, req RegisterRequest) (UserResponse, error)
 	Login(ctx context.Context, req LoginRequest) (*TokenResponse, error)
+	GetProfile(ctx context.Context, id uuid.UUID) (UserResponse, error)
 }

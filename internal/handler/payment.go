@@ -8,7 +8,6 @@ import (
 	"github.com/ilhamazhar/golang-gpt/internal/domain"
 	"github.com/ilhamazhar/golang-gpt/internal/middleware"
 	"github.com/ilhamazhar/golang-gpt/pkg/response"
-	"github.com/ilhamazhar/golang-gpt/pkg/validator"
 )
 
 type PaymentHandler struct {
@@ -23,12 +22,7 @@ func (h *PaymentHandler) CreateQRIS(c *gin.Context) {
 	claims := middleware.ClaimsFromContext(c)
 
 	var req domain.CreateQRISRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid JSON", nil)
-		return
-	}
-	if errs := validator.Validate(req); errs != nil {
-		response.Fail(c, http.StatusUnprocessableEntity, "validation failed", errs)
+	if !bindJSON(c, &req) {
 		return
 	}
 

@@ -51,11 +51,11 @@ type QRISResponse struct {
 }
 
 type PaymentStatusResponse struct {
-	OrderRef  string        `json:"order_ref"`
-	Amount    int64         `json:"amount"`
-	Status    PaymentStatus `json:"status"`
-	PaidAt    *time.Time    `json:"paid_at,omitempty"`
-	ExpiresAt *time.Time    `json:"expires_at,omitempty"`
+	OrderRef    string        `json:"order_ref"`
+	Amount      int64         `json:"amount"`
+	Status      PaymentStatus `json:"status"`
+	PaidAt      *time.Time    `json:"paid_at,omitempty"`
+	ExpiresAt   *time.Time    `json:"expires_at,omitempty"`
 	Description string        `json:"description,omitempty"`
 }
 

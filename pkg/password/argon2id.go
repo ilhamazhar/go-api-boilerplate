@@ -72,12 +72,12 @@ func Verify(plain, encoded string) (bool, error) {
 		return false, err
 	}
 
-	knowHash, err := base64.RawStdEncoding.DecodeString(parts[5])
+	knownHash, err := base64.RawStdEncoding.DecodeString(parts[5])
 	if err != nil {
 		return false, err
 	}
 
-	p.KeyLength = uint32(len(knowHash))
+	p.KeyLength = uint32(len(knownHash))
 
 	candidate := argon2.IDKey(
 		[]byte(plain),
@@ -87,5 +87,5 @@ func Verify(plain, encoded string) (bool, error) {
 		p.Parallelism,
 		p.KeyLength,
 	)
-	return subtle.ConstantTimeCompare(knowHash,candidate) == 1, nil
+	return subtle.ConstantTimeCompare(knownHash,candidate) == 1, nil
 }

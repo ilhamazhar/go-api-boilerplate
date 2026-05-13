@@ -35,7 +35,10 @@ func Auth(manager *jwt.Manager) gin.HandlerFunc {
 }
 
 func ClaimsFromContext(c *gin.Context) *jwt.Claims {
-	val, _ := c.Get(claimsKey)
-
-	return val.(*jwt.Claims)
+	val, ok := c.Get(claimsKey)
+	if !ok {
+		return nil
+	}
+	claims, _ := val.(*jwt.Claims)
+	return claims
 }

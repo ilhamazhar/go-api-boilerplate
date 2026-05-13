@@ -13,9 +13,10 @@ func main() {
 		log.Println("no .env file found, using environment variables")
 	}
 
-	cfg := config.Load()
-	log.Printf("Config loaded: port=%s jwt_expiry=%v jwt_refresh_expiry=%v",
-		cfg.ServerPort, cfg.JWTExpiry, cfg.JWTRefreshExpiry)
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("invalid config: %v", err)
+	}
 
 	a, err := app.New(cfg)
 	if err != nil {

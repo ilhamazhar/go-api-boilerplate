@@ -52,7 +52,7 @@ func (m *Manager) Verify(tokenStr string) (*Claims, error) {
 	}
 
 	claims, ok := token.Claims.(*Claims)
-	if !ok || !token.Valid {
+	if !ok {
 		return nil, errors.New("invalid token claims")
 	}
 	return claims, nil

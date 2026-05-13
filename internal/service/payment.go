@@ -12,19 +12,19 @@ import (
 	xenclient "github.com/ilhamazhar/golang-gpt/pkg/xendit"
 )
 
-type PaymentService struct {
+type paymentService struct {
 	repo   domain.PaymentRepository
 	xendit *xenclient.Client
 }
 
 func NewPaymentService(repo domain.PaymentRepository, xendit *xenclient.Client) domain.PaymentService {
-	return &PaymentService{
+	return &paymentService{
 		repo:   repo,
 		xendit: xendit,
 	}
 }
 
-func (s *PaymentService) CreateQRIS(ctx context.Context, userID uuid.UUID, req domain.CreateQRISRequest) (*domain.QRISResponse, error) {
+func (s *paymentService) CreateQRIS(ctx context.Context, userID uuid.UUID, req domain.CreateQRISRequest) (*domain.QRISResponse, error) {
 	orderRef := fmt.Sprintf("ORDER-%s-%d", userID, time.Now().UnixMilli())
 
 	payment := &domain.Payment{
@@ -60,10 +60,10 @@ func (s *PaymentService) CreateQRIS(ctx context.Context, userID uuid.UUID, req d
 	}, nil
 }
 
-func (s *PaymentService) GetStatus(ctx context.Context, orderRef string) (*domain.PaymentStatusResponse, error) {
+func (s *paymentService) GetStatus(ctx context.Context, orderRef string) (*domain.PaymentStatusResponse, error) {
 	payment, err := s.repo.FindByOrderRef(ctx, orderRef)
 	if err != nil {
-		return nil, errors.New("Failed to find payment")
+		return nil, errors.New("failed to find payment")
 	}
 
 	return &domain.PaymentStatusResponse{
@@ -76,7 +76,7 @@ func (s *PaymentService) GetStatus(ctx context.Context, orderRef string) (*domai
 	}, nil
 }
 
-func (s *PaymentService) HandleWebhook(ctx context.Context, callbackToken string, body []byte) error {
+func (s *paymentService) HandleWebhook(ctx context.Context, callbackToken string, body []byte) error {
 	if !s.xendit.VerifyCallbackToken(callbackToken) {
 		return errors.New("invalid callback token")
 	}
@@ -99,9 +99,9 @@ func (s *PaymentService) HandleWebhook(ctx context.Context, callbackToken string
 		return errors.New("missing order reference in webhook")
 	}
 
-	payment, err := s.repo.FindByOrderRef(ctx, event.Data.ReferenceID)
+	payment, err := s.repo.FindByOrderRef(ctx, orderRef)
 	if err != nil {
-		return fmt.Errorf("payment not found for ref %s", event.Data.ReferenceID)
+		return fmt.Errorf("payment not found for ref %s", orderRef)
 	}
 
 	switch event.Event {

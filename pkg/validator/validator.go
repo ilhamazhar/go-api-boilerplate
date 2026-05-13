@@ -43,6 +43,8 @@ func message(e validator.FieldError) string {
 		return fmt.Sprintf("%s must be equal to %s", e.Field(), e.Param())
 	case "gt":
 		return fmt.Sprintf("%s must be greater than %s", e.Field(), e.Param())
+	case "gte":
+		return fmt.Sprintf("%s must be at least %s", e.Field(), e.Param())
 	default:
 		return fmt.Sprintf("%s is not valid", e.Field())
 	}
