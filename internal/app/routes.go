@@ -24,6 +24,8 @@ func registerRoutes(r *gin.Engine, h Handlers, jwtManager *jwt.Manager) {
 	{
 		auth.POST("/register", h.Auth.Register)
 		auth.POST("/login", h.Auth.Login)
+		auth.POST("/refresh", h.Auth.Refresh)
+		auth.POST("/logout", h.Auth.Logout)
 	}
 
 	api := r.Group("/api")

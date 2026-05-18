@@ -7,13 +7,19 @@ import (
 	"github.com/google/uuid"
 )
 
+type TokenStore interface {
+	Save(ctx context.Context, token, userID string, ttl time.Duration) error
+	Exists(ctx context.Context, token string) (string, error)
+	Revoke(ctx context.Context, token string) error
+}
+
 // --- GORM Model ---
 
 type User struct {
 	ID           uuid.UUID `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Name         string    `json:"name" gorm:"not null"`
 	Email        string    `json:"email" gorm:"uniqueIndex;not null"`
-	PasswordHash string    `json:"password_hash" gorm:"not null"`
+	PasswordHash string    `json:"-" gorm:"not null"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 }
@@ -30,6 +36,14 @@ type RegisterRequest struct {
 type LoginRequest struct {
 	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required"`
+}
+
+type RefreshRequest struct {
+	RefreshToken string `json:"refresh_token" validate:"required"`
+}
+
+type LogoutRequest struct {
+	RefreshToken string `json:"refresh_token" validate:"required"`
 }
 
 type UpdateUserRequest struct {
@@ -56,6 +70,8 @@ type UserResponse struct {
 type TokenResponse struct {
 	AccessToken  string       `json:"access_token"`
 	RefreshToken string       `json:"refresh_token"`
+	TokenType    string       `json:"token_type"`
+	ExpiresIn    int64        `json:"expires_in"` // seconds until access token expires
 	User         UserResponse `json:"user"`
 }
 
@@ -90,6 +106,8 @@ type UserService interface {
 type AuthService interface {
 	Register(ctx context.Context, req RegisterRequest) (UserResponse, error)
 	Login(ctx context.Context, req LoginRequest) (*TokenResponse, error)
+	RefreshToken(ctx context.Context, refreshToken string) (*TokenResponse, error)
+	Logout(ctx context.Context, refreshToken string) error
 	GetProfile(ctx context.Context, id uuid.UUID) (UserResponse, error)
 	ChangePassword(ctx context.Context, id uuid.UUID, req ChangePasswordRequest) error
 }

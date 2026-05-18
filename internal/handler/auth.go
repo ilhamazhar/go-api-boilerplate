@@ -47,6 +47,35 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	response.OK(c, http.StatusOK, "Logged in successfully", tokens)
 }
 
+func (h *AuthHandler) Refresh(c *gin.Context) {
+	var req domain.RefreshRequest
+	if !bindJSON(c, &req) {
+		return
+	}
+
+	tokens, err := h.auth.RefreshToken(c.Request.Context(), req.RefreshToken)
+	if err != nil {
+		response.Fail(c, http.StatusUnauthorized, err.Error(), nil)
+		return
+	}
+
+	response.OK(c, http.StatusOK, "Token refreshed", tokens)
+}
+
+func (h *AuthHandler) Logout(c *gin.Context) {
+	var req domain.LogoutRequest
+	if !bindJSON(c, &req) {
+		return
+	}
+
+	if err := h.auth.Logout(c.Request.Context(), req.RefreshToken); err != nil {
+		response.Fail(c, http.StatusUnauthorized, err.Error(), nil)
+		return
+	}
+
+	response.OK(c, http.StatusOK, "Logged out successfully", nil)
+}
+
 func (h *AuthHandler) Me(c *gin.Context) {
 	claims := middleware.ClaimsFromContext(c)
 

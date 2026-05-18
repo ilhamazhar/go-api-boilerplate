@@ -28,6 +28,12 @@ func Auth(manager *jwt.Manager) gin.HandlerFunc {
 			return
 		}
 
+		if claims.TokenType != "access" {
+			response.Fail(c, http.StatusUnauthorized, "Invalid token type", nil)
+			c.Abort()
+			return
+		}
+
 		c.Set(claimsKey, claims)
 
 		c.Next()

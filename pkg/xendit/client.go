@@ -21,12 +21,14 @@ type QRCodeResult struct {
 type Client struct {
 	sdk           *xendit.APIClient
 	callbackToken string
+	webhookToken  string
 }
 
-func NewClient(apiKey, callbackToken string) *Client {
+func NewClient(apiKey, callbackToken, webhookToken string) *Client {
 	return &Client{
 		sdk:           xendit.NewClient(apiKey),
 		callbackToken: callbackToken,
+		webhookToken:  webhookToken,
 	}
 }
 
@@ -86,4 +88,8 @@ func (c *Client) GetPaymentRequest(ctx context.Context, paymentRequestID string)
 
 func (c *Client) VerifyCallbackToken(token string) bool {
 	return token != "" && token == c.callbackToken
+}
+
+func (c *Client) VerifyWebhookToken(token string) bool {
+	return token != "" && token == c.webhookToken
 }

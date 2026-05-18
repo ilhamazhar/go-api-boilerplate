@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ilhamazhar/golang-gpt/config"
@@ -10,6 +11,7 @@ import (
 	"github.com/ilhamazhar/golang-gpt/internal/repository"
 	"github.com/ilhamazhar/golang-gpt/internal/service"
 	"github.com/ilhamazhar/golang-gpt/pkg/jwt"
+	tokenstore "github.com/ilhamazhar/golang-gpt/pkg/token"
 	xenclient "github.com/ilhamazhar/golang-gpt/pkg/xendit"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -31,9 +33,14 @@ func New(cfg config.Config) (*App, error) {
 	}
 
 	// --- External clients ---
-	jwtManager := jwt.NewManager(cfg.JWTSecret, cfg.JWTExpiry)
-	refreshManager := jwt.NewManager(cfg.JWTSecret, cfg.JWTRefreshExpiry)
-	xenditClient := xenclient.NewClient(cfg.XenditAPIKey, cfg.XenditCallbackToken)
+	jwtManager := jwt.NewManager(cfg.JWTSecret, cfg.JWTExpiry, "access")
+	refreshManager := jwt.NewManager(cfg.JWTRefreshSecret, cfg.JWTRefreshExpiry, "refresh")
+	xenditClient := xenclient.NewClient(cfg.XenditAPIKey, cfg.XenditCallbackToken, cfg.XenditWebhookToken)
+
+	store, err := tokenstore.NewStore(cfg.RedisURL)
+	if err != nil {
+		return nil, fmt.Errorf("redis: %w", err)
+	}
 
 	// --- Repositories ---
 	userRepo := repository.NewUserRepository(db)
@@ -41,7 +48,7 @@ func New(cfg config.Config) (*App, error) {
 	rateRepo := repository.NewRateRepository(db)
 
 	// --- Services ---
-	authService := service.NewAuthService(userRepo, jwtManager, refreshManager)
+	authService := service.NewAuthService(userRepo, store, jwtManager, refreshManager, cfg.JWTRefreshExpiry)
 	paymentService := service.NewPaymentService(paymentRepo, xenditClient)
 	rateService := service.NewRateService(rateRepo)
 	userService := service.NewUserService(userRepo)
@@ -59,8 +66,11 @@ func New(cfg config.Config) (*App, error) {
 	return &App{cfg: cfg, router: r}, nil
 }
 
-func (a *App) Run() error {
-	return a.router.Run(":" + a.cfg.ServerPort)
+func (a *App) Server() *http.Server {
+	return &http.Server{
+		Addr:    ":" + a.cfg.ServerPort,
+		Handler: a.router,
+	}
 }
 
 func initDB(dsn string) (*gorm.DB, error) {

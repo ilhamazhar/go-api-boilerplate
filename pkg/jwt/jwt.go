@@ -9,27 +9,35 @@ import (
 )
 
 type Claims struct {
-	UserID uuid.UUID `json:"user_id"`
-	Email  string    `json:"email"`
+	UserID    uuid.UUID `json:"user_id"`
+	Email     string    `json:"email"`
+	TokenType string    `json:"token_type"` // "access" or "refresh"
 	jwt.RegisteredClaims
 }
 
 type Manager struct {
-	secret []byte
-	expiry time.Duration
+	secret    []byte
+	expiry    time.Duration
+	tokenType string
 }
 
-func NewManager(secret string, expiry time.Duration) *Manager {
+func NewManager(secret string, expiry time.Duration, tokenType string) *Manager {
 	return &Manager{
-		secret: []byte(secret),
-		expiry: expiry,
+		secret:    []byte(secret),
+		expiry:    expiry,
+		tokenType: tokenType,
 	}
+}
+
+func (m *Manager) Expiry() time.Duration {
+	return m.expiry
 }
 
 func (m *Manager) Generate(userID uuid.UUID, email string) (string, error) {
 	claims := Claims{
-		UserID: userID,
-		Email:  email,
+		UserID:    userID,
+		Email:     email,
+		TokenType: m.tokenType,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(m.expiry)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
