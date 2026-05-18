@@ -5,6 +5,8 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis_rate/v10"
+	"github.com/ilhamazhar/golang-gpt/config"
 	"github.com/ilhamazhar/golang-gpt/internal/handler"
 	"github.com/ilhamazhar/golang-gpt/internal/middleware"
 	"github.com/ilhamazhar/golang-gpt/pkg/jwt"
@@ -17,10 +19,12 @@ type Handlers struct {
 	User    *handler.UserHandler
 }
 
-func registerRoutes(r *gin.Engine, h Handlers, jwtManager *jwt.Manager) {
+func registerRoutes(r *gin.Engine, h Handlers, jwtManager *jwt.Manager, limiter *redis_rate.Limiter, cfg config.Config) {
 	r.POST("/webhooks/xendit", h.Payment.Webhook)
 
+	// Auth routes: strict IP-based limits to prevent brute force
 	auth := r.Group("/auth")
+	auth.Use(middleware.RateLimit(limiter, redis_rate.PerMinute(cfg.RateLimitAuth), middleware.IPKey("auth")))
 	{
 		auth.POST("/register", h.Auth.Register)
 		auth.POST("/login", h.Auth.Login)
@@ -28,8 +32,10 @@ func registerRoutes(r *gin.Engine, h Handlers, jwtManager *jwt.Manager) {
 		auth.POST("/logout", h.Auth.Logout)
 	}
 
+	// Authenticated API routes: per-user limits
 	api := r.Group("/api")
 	api.Use(middleware.Auth(jwtManager))
+	api.Use(middleware.RateLimit(limiter, redis_rate.PerMinute(cfg.RateLimitAPI), middleware.UserKey("api")))
 	{
 		me := api.Group("/me")
 		{

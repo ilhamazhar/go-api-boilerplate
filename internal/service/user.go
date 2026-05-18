@@ -57,8 +57,11 @@ func (s *userService) Update(ctx context.Context, id uuid.UUID, req domain.Updat
 }
 
 func (s *userService) Delete(ctx context.Context, id uuid.UUID) error {
-	if _, err := s.repo.FindByID(ctx, id); err != nil {
-		return errors.New("user not found")
+	if err := s.repo.Delete(ctx, id); err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return errors.New("user not found")
+		}
+		return err
 	}
-	return s.repo.Delete(ctx, id)
+	return nil
 }

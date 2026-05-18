@@ -71,10 +71,13 @@ func (s *rateService) Update(ctx context.Context, id uint, req domain.UpdateRate
 }
 
 func (s *rateService) Delete(ctx context.Context, id uint) error {
-	if _, err := s.repo.FindByID(ctx, id); err != nil {
-		return errors.New("rate not found")
+	if err := s.repo.Delete(ctx, id); err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return errors.New("rate not found")
+		}
+		return err
 	}
-	return s.repo.Delete(ctx, id)
+	return nil
 }
 
 func toRateResponse(r *domain.Rate) *domain.RateResponse {

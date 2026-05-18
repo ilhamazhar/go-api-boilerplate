@@ -27,7 +27,7 @@ type User struct {
 // --- Request DTOs ---
 
 type RegisterRequest struct {
-	Name            string `json:"name" validate:"required"`
+	Name            string `json:"name" validate:"required,max=255"`
 	Email           string `json:"email" validate:"required,email"`
 	Password        string `json:"password" validate:"required,min=6"`
 	PasswordConfirm string `json:"password_confirm" validate:"required,eqfield=Password"`

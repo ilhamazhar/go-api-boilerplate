@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis_rate/v10"
 	"github.com/ilhamazhar/golang-gpt/config"
 	"github.com/ilhamazhar/golang-gpt/internal/domain"
 	"github.com/ilhamazhar/golang-gpt/internal/handler"
@@ -41,6 +42,7 @@ func New(cfg config.Config) (*App, error) {
 	if err != nil {
 		return nil, fmt.Errorf("redis: %w", err)
 	}
+	rateLimiter := redis_rate.NewLimiter(store.Client())
 
 	// --- Repositories ---
 	userRepo := repository.NewUserRepository(db)
@@ -61,7 +63,7 @@ func New(cfg config.Config) (*App, error) {
 
 	r := gin.Default()
 	r.Use(corsMiddleware())
-	registerRoutes(r, Handlers{Auth: authHandler, Payment: paymentHandler, Rate: rateHandler, User: userHandler}, jwtManager)
+	registerRoutes(r, Handlers{Auth: authHandler, Payment: paymentHandler, Rate: rateHandler, User: userHandler}, jwtManager, rateLimiter, cfg)
 
 	return &App{cfg: cfg, router: r}, nil
 }

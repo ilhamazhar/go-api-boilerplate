@@ -28,7 +28,7 @@ func (r *userRepo) FindAll(ctx context.Context, page, limit int) ([]domain.User,
 	if err := r.db.WithContext(ctx).Model(&domain.User{}).Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
-	err := r.db.WithContext(ctx).Offset(offset).Limit(limit).Find(&users).Error
+	err := r.db.WithContext(ctx).Order("created_at DESC").Offset(offset).Limit(limit).Find(&users).Error
 	return users, total, err
 }
 
@@ -49,5 +49,12 @@ func (r *userRepo) Update(ctx context.Context, user *domain.User) error {
 }
 
 func (r *userRepo) Delete(ctx context.Context, id uuid.UUID) error {
-	return r.db.WithContext(ctx).Delete(&domain.User{}, id).Error
+	result := r.db.WithContext(ctx).Delete(&domain.User{}, id)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return domain.ErrNotFound
+	}
+	return nil
 }

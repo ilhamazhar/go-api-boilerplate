@@ -18,6 +18,8 @@ type Config struct {
 	XenditAPIKey        string
 	XenditCallbackToken string
 	XenditWebhookToken  string
+	RateLimitAuth       int // requests per minute for /auth/* (IP-based)
+	RateLimitAPI        int // requests per minute for /api/* (user-based)
 }
 
 func Load() (Config, error) {
@@ -28,6 +30,14 @@ func Load() (Config, error) {
 	jwtRefreshExpiry, err := strconv.ParseFloat(getEnv("JWT_REFRESH_EXPIRY_HOURS", "168"), 64)
 	if err != nil {
 		return Config{}, errors.New("invalid JWT_REFRESH_EXPIRY_HOURS")
+	}
+	rateLimitAuth, err := strconv.Atoi(getEnv("RATE_LIMIT_AUTH_RPM", "10"))
+	if err != nil || rateLimitAuth <= 0 {
+		return Config{}, errors.New("invalid RATE_LIMIT_AUTH_RPM: must be a positive integer")
+	}
+	rateLimitAPI, err := strconv.Atoi(getEnv("RATE_LIMIT_API_RPM", "100"))
+	if err != nil || rateLimitAPI <= 0 {
+		return Config{}, errors.New("invalid RATE_LIMIT_API_RPM: must be a positive integer")
 	}
 
 	cfg := Config{
@@ -41,6 +51,8 @@ func Load() (Config, error) {
 		XenditAPIKey:        os.Getenv("XENDIT_API_KEY"),
 		XenditCallbackToken: os.Getenv("XENDIT_CALLBACK_TOKEN"),
 		XenditWebhookToken:  os.Getenv("XENDIT_WEBHOOK_TOKEN"),
+		RateLimitAuth:       rateLimitAuth,
+		RateLimitAPI:        rateLimitAPI,
 	}
 
 	if cfg.DatabaseURL == "" {

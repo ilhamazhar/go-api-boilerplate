@@ -25,6 +25,10 @@ func NewStore(redisURL string) (*Store, error) {
 	return &Store{client: client}, nil
 }
 
+func (s *Store) Client() *redis.Client {
+	return s.client
+}
+
 func (s *Store) Save(ctx context.Context, token, userID string, ttl time.Duration) error {
 	return s.client.Set(ctx, hashKey(token), userID, ttl).Err()
 }

@@ -87,5 +87,5 @@ func Verify(plain, encoded string) (bool, error) {
 		p.Parallelism,
 		p.KeyLength,
 	)
-	return subtle.ConstantTimeCompare(knownHash,candidate) == 1, nil
+	return subtle.ConstantTimeCompare(knownHash, candidate) == 1, nil
 }

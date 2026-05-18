@@ -27,7 +27,7 @@ func (r *rateRepo) FindAll(ctx context.Context, page, limit int) ([]domain.Rate,
 	if err := r.db.WithContext(ctx).Model(&domain.Rate{}).Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
-	err := r.db.WithContext(ctx).Offset(offset).Limit(limit).Find(&rates).Error
+	err := r.db.WithContext(ctx).Order("created_at DESC").Offset(offset).Limit(limit).Find(&rates).Error
 	return rates, total, err
 }
 
@@ -42,5 +42,12 @@ func (r *rateRepo) Update(ctx context.Context, rate *domain.Rate) error {
 }
 
 func (r *rateRepo) Delete(ctx context.Context, id uint) error {
-	return r.db.WithContext(ctx).Delete(&domain.Rate{}, id).Error
+	result := r.db.WithContext(ctx).Delete(&domain.Rate{}, id)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return domain.ErrNotFound
+	}
+	return nil
 }

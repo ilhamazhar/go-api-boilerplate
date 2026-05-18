@@ -19,10 +19,10 @@ const (
 type Payment struct {
 	ID          uint          `json:"id" gorm:"primaryKey" `
 	UserID      uuid.UUID     `json:"user_id" gorm:"not null;index;constraint:OnDelete:CASCADE"`
-	User        User          `json:"user" gorm:"foreignKey:UserID"`
+	User        User          `json:"-" gorm:"foreignKey:UserID"`
 	OrderRef    string        `json:"order_ref" gorm:"not null;uniqueIndex"`
-	XenditID    string        `json:"xendit_id" gorm:"not null;uniqueIndex"`
-	QRString    string        `json:"qr_string" gorm:"not null;type:text"`
+	XenditID    string        `json:"xendit_id,omitempty" gorm:"index"`
+	QRString    string        `json:"qr_string,omitempty" gorm:"type:text"`
 	Amount      int64         `json:"amount" gorm:"not null"`
 	Currency    string        `json:"currency" gorm:"default:'IDR'"`
 	Status      PaymentStatus `json:"status" gorm:"default:'PENDING'"`
