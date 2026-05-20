@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -18,8 +19,11 @@ type Config struct {
 	XenditAPIKey        string
 	XenditCallbackToken string
 	XenditWebhookToken  string
-	RateLimitAuth       int // requests per minute for /auth/* (IP-based)
-	RateLimitAPI        int // requests per minute for /api/* (user-based)
+	RateLimitAuth       int           // max requests per period for /auth/* (IP-based)
+	RateLimitAuthPeriod time.Duration // time window for auth rate limit
+	RateLimitAPI        int           // max requests per period for /api/* (user-based)
+	RateLimitAPIPeriod  time.Duration // time window for api rate limit
+	CORSAllowedOrigins  []string      // comma-separated list, e.g. https://app.com,https://admin.com
 }
 
 func Load() (Config, error) {
@@ -31,13 +35,22 @@ func Load() (Config, error) {
 	if err != nil {
 		return Config{}, errors.New("invalid JWT_REFRESH_EXPIRY_HOURS")
 	}
-	rateLimitAuth, err := strconv.Atoi(getEnv("RATE_LIMIT_AUTH_RPM", "10"))
-	if err != nil || rateLimitAuth <= 0 {
-		return Config{}, errors.New("invalid RATE_LIMIT_AUTH_RPM: must be a positive integer")
+
+	rateLimitAuth, err := strconv.Atoi(getEnv("RATE_LIMIT_AUTH_MAX", "10"))
+	if err != nil || rateLimitAuth < 1 {
+		return Config{}, errors.New("invalid RATE_LIMIT_AUTH_MAX: must be a positive integer")
 	}
-	rateLimitAPI, err := strconv.Atoi(getEnv("RATE_LIMIT_API_RPM", "100"))
-	if err != nil || rateLimitAPI <= 0 {
-		return Config{}, errors.New("invalid RATE_LIMIT_API_RPM: must be a positive integer")
+	rateLimitAuthPeriod, err := parsePeriod(getEnv("RATE_LIMIT_AUTH_PERIOD", "minute"))
+	if err != nil {
+		return Config{}, errors.New("invalid RATE_LIMIT_AUTH_PERIOD: must be second, minute, hour, or day")
+	}
+	rateLimitAPI, err := strconv.Atoi(getEnv("RATE_LIMIT_API_MAX", "100"))
+	if err != nil || rateLimitAPI < 1 {
+		return Config{}, errors.New("invalid RATE_LIMIT_API_MAX: must be a positive integer")
+	}
+	rateLimitAPIPeriod, err := parsePeriod(getEnv("RATE_LIMIT_API_PERIOD", "minute"))
+	if err != nil {
+		return Config{}, errors.New("invalid RATE_LIMIT_API_PERIOD: must be second, minute, hour, or day")
 	}
 
 	cfg := Config{
@@ -52,7 +65,10 @@ func Load() (Config, error) {
 		XenditCallbackToken: os.Getenv("XENDIT_CALLBACK_TOKEN"),
 		XenditWebhookToken:  os.Getenv("XENDIT_WEBHOOK_TOKEN"),
 		RateLimitAuth:       rateLimitAuth,
+		RateLimitAuthPeriod: rateLimitAuthPeriod,
 		RateLimitAPI:        rateLimitAPI,
+		RateLimitAPIPeriod:  rateLimitAPIPeriod,
+		CORSAllowedOrigins:  strings.Split(getEnv("CORS_ALLOWED_ORIGINS", "*"), ","),
 	}
 
 	if cfg.DatabaseURL == "" {
@@ -82,4 +98,19 @@ func getEnv(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+func parsePeriod(s string) (time.Duration, error) {
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "second":
+		return time.Second, nil
+	case "minute":
+		return time.Minute, nil
+	case "hour":
+		return time.Hour, nil
+	case "day":
+		return 24 * time.Hour, nil
+	default:
+		return 0, errors.New("unknown period")
+	}
 }

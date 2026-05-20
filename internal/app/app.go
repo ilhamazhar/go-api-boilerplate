@@ -62,7 +62,7 @@ func New(cfg config.Config) (*App, error) {
 	userHandler := handler.NewUserHandler(userService)
 
 	r := gin.Default()
-	r.Use(corsMiddleware())
+	r.Use(corsMiddleware(cfg.CORSAllowedOrigins))
 	registerRoutes(r, Handlers{Auth: authHandler, Payment: paymentHandler, Rate: rateHandler, User: userHandler}, jwtManager, rateLimiter, cfg)
 
 	return &App{cfg: cfg, router: r}, nil

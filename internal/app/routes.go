@@ -24,7 +24,7 @@ func registerRoutes(r *gin.Engine, h Handlers, jwtManager *jwt.Manager, limiter 
 
 	// Auth routes: strict IP-based limits to prevent brute force
 	auth := r.Group("/auth")
-	auth.Use(middleware.RateLimit(limiter, redis_rate.PerMinute(cfg.RateLimitAuth), middleware.IPKey("auth")))
+	auth.Use(middleware.RateLimit(limiter, redis_rate.Limit{Rate: cfg.RateLimitAuth, Period: cfg.RateLimitAuthPeriod, Burst: cfg.RateLimitAuth}, middleware.IPKey("rl:auth")))
 	{
 		auth.POST("/register", h.Auth.Register)
 		auth.POST("/login", h.Auth.Login)
@@ -35,7 +35,7 @@ func registerRoutes(r *gin.Engine, h Handlers, jwtManager *jwt.Manager, limiter 
 	// Authenticated API routes: per-user limits
 	api := r.Group("/api")
 	api.Use(middleware.Auth(jwtManager))
-	api.Use(middleware.RateLimit(limiter, redis_rate.PerMinute(cfg.RateLimitAPI), middleware.UserKey("api")))
+	api.Use(middleware.RateLimit(limiter, redis_rate.Limit{Rate: cfg.RateLimitAPI, Period: cfg.RateLimitAPIPeriod, Burst: cfg.RateLimitAPI}, middleware.UserKey("rl:api")))
 	{
 		me := api.Group("/me")
 		{
@@ -68,9 +68,9 @@ func registerRoutes(r *gin.Engine, h Handlers, jwtManager *jwt.Manager, limiter 
 	}
 }
 
-func corsMiddleware() gin.HandlerFunc {
+func corsMiddleware(allowedOrigins []string) gin.HandlerFunc {
 	return cors.New(cors.Config{
-		AllowOrigins:  []string{"*"},
+		AllowOrigins:  allowedOrigins,
 		AllowMethods:  []string{"GET", "POST", "PUT", "PATCH", "DELETE"},
 		AllowHeaders:  []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders: []string{"Content-Length"},
