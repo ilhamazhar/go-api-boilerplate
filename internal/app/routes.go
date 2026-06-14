@@ -15,7 +15,6 @@ import (
 type Handlers struct {
 	Auth    *handler.AuthHandler
 	Payment *handler.PaymentHandler
-	Rate    *handler.RateHandler
 	User    *handler.UserHandler
 }
 
@@ -47,15 +46,6 @@ func registerRoutes(r *gin.Engine, h Handlers, jwtManager *jwt.Manager, limiter 
 		{
 			payments.POST("/qris", h.Payment.CreateQRIS)
 			payments.GET("/:order_ref", h.Payment.GetStatus)
-		}
-
-		rates := api.Group("/rates")
-		{
-			rates.POST("", h.Rate.Create)
-			rates.GET("", h.Rate.GetAll)
-			rates.GET("/:id", h.Rate.GetByID)
-			rates.PUT("/:id", h.Rate.Update)
-			rates.DELETE("/:id", h.Rate.Delete)
 		}
 
 		users := api.Group("/users")

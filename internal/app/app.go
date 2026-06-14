@@ -29,7 +29,7 @@ func New(cfg config.Config) (*App, error) {
 		return nil, fmt.Errorf("database: %w", err)
 	}
 
-	if err := db.AutoMigrate(&domain.User{}, &domain.Payment{}, &domain.Rate{}); err != nil {
+	if err := db.AutoMigrate(&domain.User{}, &domain.Payment{}); err != nil {
 		return nil, fmt.Errorf("migrate: %w", err)
 	}
 
@@ -47,23 +47,20 @@ func New(cfg config.Config) (*App, error) {
 	// --- Repositories ---
 	userRepo := repository.NewUserRepository(db)
 	paymentRepo := repository.NewPaymentRepository(db)
-	rateRepo := repository.NewRateRepository(db)
 
 	// --- Services ---
 	authService := service.NewAuthService(userRepo, store, jwtManager, refreshManager, cfg.JWTRefreshExpiry)
 	paymentService := service.NewPaymentService(paymentRepo, xenditClient)
-	rateService := service.NewRateService(rateRepo)
 	userService := service.NewUserService(userRepo)
 
 	// --- Handlers ---
 	authHandler := handler.NewAuthHandler(authService)
 	paymentHandler := handler.NewPaymentHandler(paymentService)
-	rateHandler := handler.NewRateHandler(rateService)
 	userHandler := handler.NewUserHandler(userService)
 
 	r := gin.Default()
 	r.Use(corsMiddleware(cfg.CORSAllowedOrigins))
-	registerRoutes(r, Handlers{Auth: authHandler, Payment: paymentHandler, Rate: rateHandler, User: userHandler}, jwtManager, rateLimiter, cfg)
+	registerRoutes(r, Handlers{Auth: authHandler, Payment: paymentHandler, User: userHandler}, jwtManager, rateLimiter, cfg)
 
 	return &App{cfg: cfg, router: r}, nil
 }
